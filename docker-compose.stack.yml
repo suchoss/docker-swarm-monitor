@@ -119,7 +119,7 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - monitoring
+      - monitor-net
     environment:
       GF_SECURITY_ADMIN_PASSWORD: foobar
       GF_USERS_ALLOW_SIGN_UP: "false"
