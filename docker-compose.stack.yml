@@ -1,6 +1,6 @@
 version: "3.3"
 networks:
-  net:
+  monitor-net:
     driver: overlay
     attachable: true
 
@@ -17,18 +17,19 @@ configs:
 
 services:
   cadvisor:
-    image: google/cadvisor
+    image: gcr.io/cadvisor/cadvisor
     networks:
-      - net
+      - monitor-net
     command: -logtostderr -docker_only
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /:/rootfs:ro
-      - /var/run:/var/run
+      - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
     deploy:
       mode: global
+      restart_policy:
+        condition: on-failure
       resources:
         limits:
           memory: 128M
@@ -38,7 +39,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     networks:
-      - net
+      - monitor-net
     volumes:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
@@ -49,6 +50,8 @@ services:
         target: /docker-entrypoint.sh
     deploy:
       mode: global
+      restart_policy:
+        condition: on-failure
     environment:
       - NODE_ID={{.Node.ID}}
     command:
@@ -63,27 +66,29 @@ services:
        - /bin/sh
        - /docker-entrypoint.sh
 
-  dockerd-exporter:
-    image: stefanprodan/caddy
-    networks:
-      - net
-    environment:
-      - DOCKER_GWBRIDGE_IP=172.18.0.1
-    configs:
-      - source: dockerd_config
-        target: /etc/caddy/Caddyfile
-    deploy:
-      mode: global
-      resources:
-        limits:
-          memory: 128M
-        reservations:
-          memory: 64M
+ # dockerd-exporter:
+ #   image: stefanprodan/caddy
+ #   networks:
+ #     - monitor-net
+ #   environment:
+ #     - DOCKER_GWBRIDGE_IP=172.18.0.1
+ #   configs:
+ #     - source: dockerd_config
+ #       target: /etc/caddy/Caddyfile
+ #   deploy:
+ #     mode: global
+ #     restart_policy:
+ #       condition: on-failure
+ #     resources:
+ #       limits:
+ #         memory: 128M
+ #       reservations:
+ #         memory: 64M
 
   prometheus:
     image: prom/prometheus
     networks:
-      - net
+      - monitor-net
     ports:
       - "9090:9090"
     command:
@@ -98,6 +103,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       placement:
         constraints:
           - node.role == manager
@@ -106,3 +113,26 @@ services:
           memory: 2048M
         reservations:
           memory: 128M
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: foobar
+      GF_USERS_ALLOW_SIGN_UP: false
+      PROMETHEUS_ENDPOINT: http://prometheus:9090
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 64M
+        reservations:
+          cpus: '0.50'
+          memory: 32M
