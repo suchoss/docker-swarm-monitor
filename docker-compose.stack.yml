@@ -117,7 +117,7 @@ services:
   grafana:
     image: grafana/grafana
     ports:
-      - "83000:3000"
+      - "23000:3000"
     networks:
       - monitor-net
     environment:
