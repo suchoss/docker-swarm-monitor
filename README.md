@@ -22,3 +22,11 @@ The following components are part of this project
 * node Exporter
 * dockerd-exporter
 * Prometheus
+* Grafana
+
+### Grafana dashboard
+First we need to add Prometheus as main metrics data source. Go to Configuration > Data source menu and click on Add data source. Select Prometheus and set the internal docker prometheus URL, which should be http://prometheus:9090. A successful message should appear when saving.
+
+Then go to Create > Import, load 11939 as dashboard ID, and select Prometheus source and woha!
+
+(source https://blog.okami101.io/2022/02/setup-a-docker-swarm-cluster-part-v-monitoring/)
