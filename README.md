@@ -30,3 +30,7 @@ First we need to add Prometheus as main metrics data source. Go to Configuration
 Then go to Create > Import, load 11939 as dashboard ID, and select Prometheus source and woha!
 
 (source https://blog.okami101.io/2022/02/setup-a-docker-swarm-cluster-part-v-monitoring/)
+
+#### Other dashboard ids
+- 14282
+- 1860
